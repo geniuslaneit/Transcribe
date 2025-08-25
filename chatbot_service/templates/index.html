@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Chatbot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: #222831;
+      color: #eeeeee;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      height: 100vh;
+    }
+    /* Sidebar styles */
+    #sidebar {
+      width: 250px;
+      background: #393e46;
+      padding: 15px;
+      border-right: 1px solid #222;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar button {
+      margin-bottom: 10px;
+      background-color: #00adb5;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+    }
+    #sidebar button:hover {
+      background-color: #007f87;
+    }
+    .chat-item {
+      padding: 8px;
+      margin-bottom: 6px;
+      background: #222831;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+    .chat-item:hover {
+      background: #00adb5;
+      color: white;
+    }
+
+    /* Chat area */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .messages {
+      flex: 1;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      margin-bottom: 15px;
+      border: 1px solid #222831;
+      padding: 15px;
+      border-radius: 8px;
+      background: #222831;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border-radius: 15px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background-color: #00adb5;
+      color: #fff;
+      align-self: flex-end;
+    }
+    .message.bot {
+      background-color: #eeeeee;
+      color: #222831;
+      align-self: flex-start;
+    }
+    form {
+      display: flex;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      border-radius: 20px 0 0 20px;
+      border: none;
+      padding: 10px 15px;
+      font-size: 1rem;
+    }
+    button[type="submit"] {
+      border-radius: 0 20px 20px 0;
+      border: none;
+      background-color: #00adb5;
+      color: white;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button[type="submit"]:hover {
+      background-color: #007f87;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <button onclick="newChat()">➕ New Chat</button>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- Chat panel -->
+  <div class="chat-container">
+    <div id="messages" class="messages"></div>
+    <form id="chatForm">
+      <input id="userInput" type="text" placeholder="Ask me something..." autocomplete="off" required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const messages = document.getElementById('messages');
+    let currentChatId = null;
+
+    function appendMessage(text, sender) {
+      const messageEl = document.createElement('div');
+      messageEl.textContent = text;
+      messageEl.classList.add('message', sender);
+      messages.appendChild(messageEl);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/history');
+      const data = await res.json();
+      const list = document.getElementById("history-list");
+      list.innerHTML = '';
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'chat-item';
+        div.textContent = item.title;
+        div.onclick = () => loadChat(item.chat_id);
+        list.appendChild(div);
+      });
+    }
+
+    async function loadChat(chatId) {
+      const res = await fetch(`/chat/${chatId}`);
+      const data = await res.json();
+      currentChatId = chatId;
+      messages.innerHTML = '';
+      data.messages.forEach(msg => {
+        appendMessage(msg.user, 'user');
+        appendMessage(msg.bot, 'bot');
+      });
+    }
+
+    function newChat() {
+      currentChatId = null;
+      messages.innerHTML = '';
+    }
+
+    chatForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const query = userInput.value.trim();
+      if (!query) return;
+
+      appendMessage(query, 'user');
+      userInput.value = '';
+
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, chat_id: currentChatId })
+        });
+        const data = await response.json();
+        currentChatId = data.chat_id;
+        appendMessage(data.answer, 'bot');
+        loadHistory();
+      } catch (error) {
+        appendMessage("Error communicating with server.", 'bot');
+      }
+    });
+
+    // Load history on page load
+    loadHistory();
+  </script>
+</body>
+</html>

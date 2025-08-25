@@ -1,0 +1,5 @@
+Flask
+faiss-cpu
+numpy
+python-dotenv
+google-generativeai
