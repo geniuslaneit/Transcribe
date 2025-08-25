@@ -1,0 +1,10 @@
+flask
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+requests
+google-generativeai
+faiss-cpu
+google-auth
+python-dotenv
+numpy

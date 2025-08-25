@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drive Video Transcriber</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background-color: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333333;
+            margin-bottom: 15px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            width: 96%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007BFF;
+            border: none;
+            padding: 10px 16px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .video-card {
+            background-color: #f9f9f9;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button.transcribe-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+        button.transcribe-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .transcribed-label {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background-color: #e6f4ea;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Google Drive Video Transcriber</h1>
+
+    <form method="post">
+        <label>Video Folder URL or ID:</label>
+        <input type="text" name="video_folder_id" value="{{ video_folder_id }}" required>
+
+        <label>Transcript Folder URL or ID:</label>
+        <input type="text" name="transcript_folder_id" value="{{ transcript_folder_id }}" required>
+
+        <button type="submit">Load Folder Info</button>
+    </form>
+
+    <hr>
+
+    {% if videos %}
+        <form action="/transcribe_all" method="post">
+            <button type="submit">Transcribe All Videos</button>
+        </form>
+
+        <h2>Available Videos</h2>
+        {% for video in videos %}
+            <div class="video-card">
+                <span>{{ video.name }}</span>
+                {% if video.transcribed %}
+                    <span class="transcribed-label">Already Transcribed</span>
+                {% else %}
+                    <!-- Pass actual video name to JS -->
+                    <button class="transcribe-btn" 
+                            data-video-id="{{ video.id }}" 
+                            data-file-name="{{ video.name | urlencode }}">
+                        Transcribe
+                    </button>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:#777;">No videos found. Please enter valid folder URLs or IDs above.</p>
+    {% endif %}
+</div>
+
+<script>
+    async function transcribeVideo(videoId, fileName, button) {
+        button.disabled = true;
+        button.textContent = 'Processing...';
+
+        try {
+            // Encode fileName in URL to handle special characters safely
+            const response = await fetch(`/transcribe/${videoId}/${fileName}`, { method: 'GET' });
+            // Backend runs transcription asynchronously; UI updated by polling
+        } catch (error) {
+            console.error('Error sending transcribe request:', error);
+            button.disabled = false;
+            button.textContent = 'Transcribe';
+        }
+    }
+
+    async function updateButtons() {
+        const buttons = document.querySelectorAll('button.transcribe-btn');
+        const videoIds = Array.from(buttons).map(btn => btn.getAttribute('data-video-id'));
+        if (videoIds.length === 0) return;
+
+        try {
+            const response = await fetch('/transcription_status', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({video_ids: videoIds})
+            });
+            const statuses = await response.json();
+
+            buttons.forEach(btn => {
+                const vid = btn.getAttribute('data-video-id');
+                const status = statuses[vid];
+                if (status === 'processing') {
+                    btn.textContent = 'Processing...';
+                    btn.disabled = true;
+                } else if (status === 'transcribed') {
+                    const label = document.createElement('span');
+                    label.className = 'transcribed-label';
+                    label.innerText = 'Already Transcribed';
+                    btn.parentNode.replaceChild(label, btn);
+                } else {
+                    btn.textContent = 'Transcribe';
+                    btn.disabled = false;
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching transcription status:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('button.transcribe-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const videoId = btn.getAttribute('data-video-id');
+                const fileName = btn.getAttribute('data-file-name');
+                transcribeVideo(videoId, fileName, btn);
+            });
+        });
+        updateButtons();
+        setInterval(updateButtons, 5000);
+    });
+</script>
+
+</body>
+</html>
