@@ -20,6 +20,7 @@ app = Flask(
     static_folder=STATIC_DIR
 )
 
+app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key')
 
 # Keep track of videos being processed to avoid duplicate work
 processing_videos = set()
