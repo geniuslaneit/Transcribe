@@ -3,3 +3,4 @@ faiss-cpu
 numpy
 python-dotenv
 google-generativeai
+gunicorn
