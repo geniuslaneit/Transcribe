@@ -25,3 +25,5 @@ shared_data/vector_index.faiss
 shared_data/metadata.json
 transcription_service/service_account.json
 transcription_service/credentials.json
+service_account.json
+credentials.json
