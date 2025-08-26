@@ -9,8 +9,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__, template_folder='transcription_service/templates')
-app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
+# compute absolute path to templates
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+STATIC_DIR   = os.path.join(BASE_DIR, 'static')
+
+app = Flask(
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR
+)
+
 
 # Keep track of videos being processed to avoid duplicate work
 processing_videos = set()
