@@ -27,7 +27,7 @@ genai.configure(api_key=os.getenv("API_KEY"))
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
 # Flask
-app = Flask(__name__, template_folder='/home/it/Assignment/transcription_service/templates', static_folder='static')
+app = Flask(__name__, template_folder='/transcription_service/templates', static_folder='static')
 
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
 
