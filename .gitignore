@@ -1,0 +1,17 @@
+# Ignore service account and credential files
+service_account.json
+credentials.json
+
+# Optional: Ignore environment variables file, if you use one
+.env
+.env.local
+.env.*.local
+
+# Ignore Python cache and environment folders
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+myenv/
