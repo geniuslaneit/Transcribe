@@ -1,0 +1,12 @@
+Flask
+google-cloud-storage
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-generativeai
+google-cloud-speech
+requests
+faiss-cpu
+numpy
+python-dotenv
+gunicorn

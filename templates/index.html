@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drive Video Transcriber - Login</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background-color: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333333;
+            margin-bottom: 15px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 96%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007BFF;
+            border: none;
+            padding: 10px 16px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .video-card {
+            background-color: #f9f9f9;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button.transcribe-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+        button.transcribe-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            background-color: #6c757d;
+        }
+        .transcribed-label {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background-color: #e6f4ea;
+        }
+        .processing-label {
+            color: #ffc107;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background-color: #fff3cd;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 25px 0;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .logout-link {
+            color: #007BFF;
+            cursor: pointer;
+            float: right;
+            margin-top: -40px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .logout-link:hover {
+            text-decoration: underline;
+        }
+        .flash-messages {
+            margin: 20px 0;
+        }
+        .flash-message {
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-info {
+            background-color: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+        .batch-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-transcribed {
+            background-color: #28a745;
+        }
+        .status-processing {
+            background-color: #ffc107;
+        }
+        .status-not-transcribed {
+            background-color: #dc3545;
+        }
+        .video-name {
+            flex: 1;
+            margin-right: 15px;
+            word-break: break-word;
+        }
+        .video-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    {% if not session.logged_in %}
+        <h1>Login to Drive Video Transcriber</h1>
+        <form id="login-form" method="post" action="/login">
+            <label>Username:</label>
+            <input type="text" name="username" required>
+            <label>Password:</label>
+            <input type="password" name="password" required>
+            <button type="submit">Login</button>
+        </form>
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
+    {% else %}
+        <a href="/logout" class="logout-link">Logout</a>
+        <h1>Google Drive Video Transcriber</h1>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category if category in ['success', 'error', 'info'] else 'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Folder Configuration Form -->
+        <form method="post" action="/">
+            <label>Video Folder URL or ID:</label>
+            <input type="text" name="video_folder_id" value="{{ video_folder_id }}" required 
+                   placeholder="https://drive.google.com/drive/folders/your-folder-id">
+            <label>Transcript Folder URL or ID:</label>
+            <input type="text" name="transcript_folder_id" value="{{ transcript_folder_id }}" required
+                   placeholder="https://drive.google.com/drive/folders/your-folder-id">
+            <button type="submit">Load Folder Info</button>
+        </form>
+        
+        <hr>
+        
+        {% if videos %}
+            <!-- Batch Controls -->
+            <div class="batch-controls">
+                <h3>Batch Operations</h3>
+                <form action="/transcribe_all" method="post" style="display: inline;">
+                    <button type="submit" onclick="return confirm('This will transcribe all untranscribed videos. This may take a while. Continue?')">
+                        Transcribe All Videos
+                    </button>
+                </form>
+                <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                    Total videos: {{ videos|length }} | 
+                    Transcribed: <span id="transcribed-count">{{ videos|selectattr('transcribed')|list|length }}</span> |
+                    Remaining: <span id="remaining-count">{{ videos|rejectattr('transcribed')|list|length }}</span>
+                </p>
+            </div>
+            
+            <h2>Available Videos</h2>
+            <div id="videos-container">
+                {% for video in videos %}
+                    <div class="video-card" data-video-id="{{ video.id }}">
+                        <div class="video-name">
+                            <span class="status-indicator {% if video.transcribed %}status-transcribed{% else %}status-not-transcribed{% endif %}"></span>
+                            {{ video.name }}
+                        </div>
+                        <div class="video-actions">
+                            {% if video.transcribed %}
+                                <span class="transcribed-label">Already Transcribed</span>
+                            {% else %}
+                                <button class="transcribe-btn" 
+                                        data-video-id="{{ video.id }}" 
+                                        data-file-name="{{ video.name | urlencode }}"
+                                        onclick="transcribeVideo('{{ video.id }}', '{{ video.name | urlencode }}', this)">
+                                    Transcribe
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color:#777; text-align: center; padding: 40px 0;">
+                No videos found. Please enter valid folder URLs or IDs above and click "Load Folder Info".
+            </p>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+    async function transcribeVideo(videoId, fileName, button) {
+        if (button.disabled) return;
+        
+        button.disabled = true;
+        button.textContent = 'Processing...';
+        button.style.backgroundColor = '#6c757d';
+        
+        // Update status indicator
+        const videoCard = button.closest('.video-card');
+        const statusIndicator = videoCard.querySelector('.status-indicator');
+        statusIndicator.className = 'status-indicator status-processing';
+        
+        try {
+            const response = await fetch(`/transcribe/${videoId}/${fileName}`, { 
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                // Redirect will happen automatically, but we can show immediate feedback
+                window.location.reload();
+            } else {
+                throw new Error('Failed to start transcription');
+            }
+        } catch (error) {
+            console.error('Error sending transcribe request:', error);
+            button.disabled = false;
+            button.textContent = 'Transcribe';
+            button.style.backgroundColor = '#28a745';
+            statusIndicator.className = 'status-indicator status-not-transcribed';
+            alert('Error starting transcription. Please try again.');
+        }
+    }
+
+    async function updateButtons() {
+        const buttons = document.querySelectorAll('button.transcribe-btn');
+        const videoIds = Array.from(buttons).map(btn => btn.getAttribute('data-video-id'));
+        
+        if (videoIds.length === 0) return;
+        
+        try {
+            const response = await fetch('/transcription_status', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({video_ids: videoIds}),
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) throw new Error('Status check failed');
+            
+            const statuses = await response.json();
+            let transcribedCount = 0;
+            let totalCount = document.querySelectorAll('.video-card').length;
+            
+            buttons.forEach(btn => {
+                const vid = btn.getAttribute('data-video-id');
+                const status = statuses[vid];
+                const videoCard = btn.closest('.video-card');
+                const statusIndicator = videoCard.querySelector('.status-indicator');
+                const actionsContainer = videoCard.querySelector('.video-actions');
+                
+                if (status === 'processing') {
+                    btn.textContent = 'Processing...';
+                    btn.disabled = true;
+                    btn.style.backgroundColor = '#6c757d';
+                    statusIndicator.className = 'status-indicator status-processing';
+                } else if (status === 'transcribed') {
+                    // Replace button with transcribed label
+                    const label = document.createElement('span');
+                    label.className = 'transcribed-label';
+                    label.innerText = 'Already Transcribed';
+                    actionsContainer.replaceChild(label, btn);
+                    statusIndicator.className = 'status-indicator status-transcribed';
+                    transcribedCount++;
+                } else {
+                    btn.textContent = 'Transcribe';
+                    btn.disabled = false;
+                    btn.style.backgroundColor = '#28a745';
+                    statusIndicator.className = 'status-indicator status-not-transcribed';
+                }
+            });
+            
+            // Update existing transcribed videos count
+            document.querySelectorAll('.transcribed-label').forEach(() => transcribedCount++);
+            
+            // Update counters
+            const transcribedCountEl = document.getElementById('transcribed-count');
+            const remainingCountEl = document.getElementById('remaining-count');
+            if (transcribedCountEl) transcribedCountEl.textContent = transcribedCount;
+            if (remainingCountEl) remainingCountEl.textContent = totalCount - transcribedCount;
+            
+        } catch (error) {
+            console.error('Error fetching transcription status:', error);
+        }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        updateButtons();
+        // Poll for status updates every 10 seconds
+        setInterval(updateButtons, 10000);
+    });
+
+    // Auto-refresh page after batch transcription
+     {% if request.endpoint == 'transcribe_all' %}
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    {% endif %}
+</script>
+</body>
+</html>

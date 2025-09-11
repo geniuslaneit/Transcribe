@@ -1,0 +1,26 @@
+# Ignore service account and credentials files
+credentials.json
+
+# Ignore virtual environment
+venv/
+venv
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore OS/Editor files
+.DS_Store
+*.swp
+*.swo
+
+# Ignore any local logs or temp files
+*.log
+tmp/
+*.tmp
+
+# Do NOT ignore app.yaml, requirements.txt, transcribe.py, or templates folder (they are needed for deployment)!
+
+# Just in case, ignore other common secrets
+*.env
+.env
